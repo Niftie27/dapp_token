@@ -1,5 +1,4 @@
 const { expect } = require("chai") 
-
 const { ethers } = require("hardhat") 
 // Importing ethers lib from hardhat lib
 // destructuring ethers from hardhat
@@ -13,7 +12,7 @@ const tokens = (n) => {
 // This is used to handle token amounts in tests
 
 describe('Token', () => {
-    let token, accounts, deployer
+    let token, accounts, deployer, receiver
 
     beforeEach(async () => {
         // Loads the compiled Token.sol contract (ABI + bytecode) from artifacts
@@ -23,8 +22,10 @@ describe('Token', () => {
         // Deploys a new contract instance to Hardhat’s in-memory test blockchain
         // Sends bytecode in a transaction and gets back a contract address
         token = await Token.deploy('Dapp University', 'DAPP', '1000000')
+
         accounts = await ethers.getSigners()
         deployer = accounts[0]
+        receiver = accounts[1]
     })
 
     describe('Deployment', () => {
@@ -64,6 +65,60 @@ describe('Token', () => {
 
 })
 
+
+    describe('Sending Tokens', () => {
+        let amount, transaction, result
+
+        describe('Success', () => {
+
+            beforeEach(async () => {
+                amount = tokens(100)
+                transaction = await token.connect(deployer).transfer(receiver.address, amount)
+                result = await transaction.wait()
+            })
+
+            it('transfers token balances', async () => {
+                expect(await token.balanceOf(deployer.address)).to.equal(tokens(999900))
+                expect(await token.balanceOf(receiver.address)).to.equal(amount)
+            })
+
+            it('emits a Transfer event', async () => {
+                // Checks if the transaction emits a Transfer event
+                // Gets the first event from the transaction result
+                const event = result.events[0]
+                expect(event.event).to.equal('Transfer')
+                // Verifies that the event name is 'Transfer'
+                // Checks the event arguments
+                // The event should have the following arguments:
+                // from: deployer address
+                // to: receiver address
+                // value: amount transferred
+
+                const args = event.args
+                expect(args.from).to.equal(deployer.address)
+                expect(args.to).to.equal(receiver.address)
+                expect(args.value).to.equal(amount)
+            })
+        })
+
+        describe('Failure', () => {
+            it('rejects insufficient balances', async () => {
+                const invalidAmount = tokens(10000000000)
+                // to.be.reverted is special Waffle matcher (Assertion library)
+                // It checks if the transaction reverts with an error
+                await expect(token.connect(deployer).transfer(receiver.address, invalidAmount)).to.be.reverted
+            })
+
+            it('rejects invalid recipient', async () => {
+                // Checks if the transaction reverts when trying to send tokens to the zero address
+                await expect(token.connect(deployer).transfer('0x0000000000000000000000000000000000000000', amount)).to.be.reverted
+
+
+
+
+            })
+        })
+    })
 })
 
 
