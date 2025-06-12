@@ -13,7 +13,7 @@ const tokens = (n) => {
 // This is used to handle token amounts in tests
 
 describe('Token', () => {
-    let token
+    let token, accounts, deployer
 
     beforeEach(async () => {
         // Loads the compiled Token.sol contract (ABI + bytecode) from artifacts
@@ -23,6 +23,8 @@ describe('Token', () => {
         // Deploys a new contract instance to Hardhat’s in-memory test blockchain
         // Sends bytecode in a transaction and gets back a contract address
         token = await Token.deploy('Dapp University', 'DAPP', '1000000')
+        accounts = await ethers.getSigners()
+        deployer = accounts[0]
     })
 
     describe('Deployment', () => {
@@ -51,6 +53,13 @@ describe('Token', () => {
         // Verifies that the total supply is 1 million tokens
 
         expect(await token.totalSupply()).to.equal(totalSupply)
+    })
+
+    it('assigns total supply to the deployer', async () => {
+        // Reads the 'balanceOf()' value for the deployer address
+        // Reads the balance of the deployer address
+        // Verifies that the deployer has the total supply of tokens
+        expect(await token.balanceOf(deployer.address)).to.equal(totalSupply)
     })
 
 })
