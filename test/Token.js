@@ -12,7 +12,7 @@ const tokens = (n) => {
 // This is used to handle token amounts in tests
 
 describe('Token', () => {
-    let token, accounts, deployer, receiver
+    let token, accounts, deployer, receiver, exchange
 
     beforeEach(async () => {
         // Loads the compiled Token.sol contract (ABI + bytecode) from artifacts
@@ -26,6 +26,7 @@ describe('Token', () => {
         accounts = await ethers.getSigners()
         deployer = accounts[0]
         receiver = accounts[1]
+        exchange = accounts[2]
     })
 
     describe('Deployment', () => {
@@ -63,8 +64,7 @@ describe('Token', () => {
         expect(await token.balanceOf(deployer.address)).to.equal(totalSupply)
     })
 
-})
-
+    })
 
     describe('Sending Tokens', () => {
         let amount, transaction, result
@@ -113,14 +113,47 @@ describe('Token', () => {
                 // Checks if the transaction reverts when trying to send tokens to the zero address
                 await expect(token.connect(deployer).transfer('0x0000000000000000000000000000000000000000', amount)).to.be.reverted
 
+            
 
 
 
             })
         })
     })
+
+    describe('Approving Tokens', () => {
+
+        beforeEach(async () => {
+                amount = tokens(100)
+                transaction = await token.connect(deployer).approve(exchange.address, amount)
+                result = await transaction.wait()
+            })
+
+        describe('Success', () => {
+            it('allocates an allowance for delegated token spending', async () => {
+                expect(await token.allowance(deployer.address, exchange.address)).to.equal(amount)
+            })
+
+            it('emits an Approval event', async () => {
+ 
+                const event = result.events[0]
+                expect(event.event).to.equal('Approval')
+ 
+
+                const args = event.args
+                expect(args.owner).to.equal(deployer.address)
+                expect(args.spender).to.equal(exchange.address)
+                expect(args.value).to.equal(amount)
+            })
+        })
+
+        describe('Failure', () => {
+            it('rejects invalid spenders', async () => {
+                const invalidAmount = tokens(10000000000)
+                // to.be.reverted is special Waffle matcher (Assertion library)
+                // It checks if the transaction reverts with an error
+                await expect(token.connect(deployer).approve('0x0000000000000000000000000000000000000000', amount)).to.be.reverted
+            })
+        })
+    })
 })
-
-
-
-
