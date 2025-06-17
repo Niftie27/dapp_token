@@ -35,20 +35,28 @@ contract Token {
         public
         returns (bool success)
     {
-        // Requre that sender has enough tokens to spend
+        // Require that sender has enough tokens to spend
         require(balanceOf[msg.sender] >= _value, "Not enough tokens to transfer");
+
+        _transfer(msg.sender, _to, _value);
+
+        return true;
+    }
+
+    function _transfer(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal {
+        // Require that sender has enough tokens to spend
         require(_to != address(0), "Cannot transfer to the zero address");
 
         // deducts tokens from spender
-        balanceOf[msg.sender] = balanceOf[msg.sender] - _value;
-
+        balanceOf[_from] = balanceOf[_from] - _value;
         // credit tokens to receiver
         balanceOf[_to] = balanceOf[_to] + _value;
 
-        // emit transfer event
-        emit Transfer(msg.sender, _to, _value);
-
-        return true;
+        emit Transfer(_from, _to, _value);
     }
 
     function approve(address _spender, uint256 _value)
@@ -58,6 +66,26 @@ contract Token {
         allowance[msg.sender][_spender] = _value;
         require(_spender != address(0), "Cannot approve the zero address");
         emit Approval(msg.sender, _spender, _value);
+        return true;
+    }
+
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    )
+        public
+        returns (bool success)
+    {
+        require(_value <= balanceOf[_from], "Not enough tokens to transfer");
+        // check approval
+        require(_value <= allowance[_from][msg.sender], "Not enough allowance");
+
+        // reset allowance
+        // prevent the "double spend
+        allowance[_from][msg.sender] -= _value;
+
+        _transfer(_from, _to, _value);
         return true;
     }
 
