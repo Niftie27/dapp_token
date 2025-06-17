@@ -4,7 +4,7 @@ async function main() {
     const Token = await ethers.getContractFactory("Token");
     // The `getContractFactory` function is used to get a contract factory for the Token contract.
     // The `Token` contract is assumed to be defined in the contracts directory.
-    const token = await Token.deploy();
+    const token = await Token.deploy("Dapp University", "DAPPU", "1000000");
     // The `deploy` function is used to deploy a new contract instance.
     // The `deploy` function returns a promise that resolves to the deployed contract instance.
     await token.deployed();
@@ -17,6 +17,8 @@ async function main() {
     // The `address` property is used to get the address of the deployed contract.
     // The `address` property is used to get the address of the deployed contract instance.
 }
+
+
 
 // The `console.log` function is used to print the address of the deployed contract.
 // The `main` function is an asynchronous function that deploys the Token contract.
